@@ -1,0 +1,6 @@
+{
+  "name": "VoxCraft Studio",
+  "description": "Multilingual AI voiceover generator with customizable accents, emotional tones, audio timing & pitch editor, and instant voice cloning.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
