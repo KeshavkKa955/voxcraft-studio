@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Mic2,
   Sparkles,
@@ -24,26 +24,33 @@ import {
 import { VoiceProfile } from '../types/index.ts';
 import { audioEngine } from '../services/audioEngine.ts';
 import { formatDuration } from '../utils/audioEncoding.ts';
+import type { HistoryItem, VoiceSettings } from '../services/accountService.ts';
 
 interface SingleVoiceoverTabProps {
   voices: VoiceProfile[];
   onVoiceoverGenerated: (audioBuffer: AudioBuffer, text: string, voiceName: string) => void;
   onOpenInEditor: () => void;
+  settings?: VoiceSettings;
+  onSettingsChange?: (settings: VoiceSettings) => void;
+  history?: HistoryItem[];
 }
 
 export const SingleVoiceoverTab: React.FC<SingleVoiceoverTabProps> = ({
   voices,
   onVoiceoverGenerated,
   onOpenInEditor,
+  settings,
+  onSettingsChange,
+  history = [],
 }) => {
   const [text, setText] = useState<string>(SAMPLE_STUDIO_SCRIPTS[0].text);
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('en-US');
-  const [selectedVoiceId, setSelectedVoiceId] = useState<string>(voices[0]?.id || 'voice-kore');
-  const [selectedAccent, setSelectedAccent] = useState<string>('General American');
-  const [selectedEmotion, setSelectedEmotion] = useState<string>('Natural Conversational');
-  const [speed, setSpeed] = useState<number>(1.0);
-  const [pitchShift, setPitchShift] = useState<number>(0);
-  const [customDirectives, setCustomDirectives] = useState<string>('');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(settings?.language || 'en-US');
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string>(settings?.voiceId && voices.some((v) => v.id === settings.voiceId) ? settings.voiceId : voices[0]?.id || 'voice-kore');
+  const [selectedAccent, setSelectedAccent] = useState<string>(settings?.accent || 'General American');
+  const [selectedEmotion, setSelectedEmotion] = useState<string>(settings?.emotion || 'Natural Conversational');
+  const [speed, setSpeed] = useState<number>(settings?.speed ?? 1.0);
+  const [pitchShift, setPitchShift] = useState<number>(settings?.pitchShift ?? 0);
+  const [customDirectives, setCustomDirectives] = useState<string>(settings?.customDirectives || '');
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
 
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -54,6 +61,21 @@ export const SingleVoiceoverTab: React.FC<SingleVoiceoverTabProps> = ({
     duration: number;
   } | null>(null);
   const [isPlayingPreview, setIsPlayingPreview] = useState<boolean>(false);
+
+
+  // Report setting changes so they can be remembered (browser, and account if logged in)
+  useEffect(() => {
+    onSettingsChange?.({
+      language: selectedLanguage,
+      voiceId: selectedVoiceId,
+      accent: selectedAccent,
+      emotion: selectedEmotion,
+      speed,
+      pitchShift,
+      customDirectives,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedLanguage, selectedVoiceId, selectedAccent, selectedEmotion, speed, pitchShift, customDirectives]);
 
   const currentVoice = voices.find((v) => v.id === selectedVoiceId) || voices[0];
 
@@ -84,7 +106,8 @@ export const SingleVoiceoverTab: React.FC<SingleVoiceoverTabProps> = ({
           accent: selectedAccent,
           emotion: selectedEmotion,
           voiceName: currentVoice?.baseVoice || 'Kore',
-          customStylePrompt: currentVoice?.isClone
+          voiceId: currentVoice?.geminiVoiceId || undefined,
+          customStylePrompt: currentVoice?.isClone && !currentVoice.geminiVoiceId
             ? currentVoice.customStylePrompt
             : customDirectives,
           speed,
@@ -224,6 +247,24 @@ export const SingleVoiceoverTab: React.FC<SingleVoiceoverTabProps> = ({
               placeholder="Type or paste any text to synthesize in your chosen language, accent, and emotional tone..."
               className="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl p-3.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/80 font-sans resize-y transition-all leading-relaxed"
             />
+
+            {history.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-zinc-400 mb-1.5">Recent scripts</p>
+                <div className="flex flex-wrap gap-2">
+                  {history.slice(0, 6).map((h) => (
+                    <button
+                      key={h.id}
+                      onClick={() => setText(h.text)}
+                      title={h.text}
+                      className="max-w-[220px] truncate text-xs px-2.5 py-1 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 hover:border-zinc-600 cursor-pointer"
+                    >
+                      {h.text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Language & Accent Bar */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">

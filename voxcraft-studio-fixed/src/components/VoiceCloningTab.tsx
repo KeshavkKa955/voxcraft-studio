@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { RealVoiceClone } from './RealVoiceClone.tsx';
 import {
   Sparkles,
   Mic,
@@ -287,6 +288,8 @@ export const VoiceCloningTab: React.FC<VoiceCloningTabProps> = ({
 
   return (
     <div className="space-y-6">
+      <RealVoiceClone onVoiceCreated={onVoiceCreated} />
+
       {/* Top Banner */}
       <div className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
@@ -295,7 +298,7 @@ export const VoiceCloningTab: React.FC<VoiceCloningTabProps> = ({
             <span>Voice Cloning & Acoustic Persona Studio</span>
           </h2>
           <p className="text-xs text-zinc-400 mt-0.5">
-            Clone your unique voice with 1-3 short calibration samples. We extract your baseline pitch, formant resonance, and speech rhythm.
+            Approximate style matching: picks the closest built-in voice to yours. For a real copy of your voice, use the section above.
           </p>
         </div>
 
