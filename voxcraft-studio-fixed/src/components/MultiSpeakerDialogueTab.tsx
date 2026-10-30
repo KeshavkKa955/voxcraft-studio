@@ -26,12 +26,16 @@ interface MultiSpeakerDialogueTabProps {
     title: string
   ) => void;
   onOpenInEditor: () => void;
+  isLoggedIn?: boolean;
+  onLoginRequired?: (reason?: 'free' | 'multi') => void;
 }
 
 export const MultiSpeakerDialogueTab: React.FC<MultiSpeakerDialogueTabProps> = ({
   voices,
   onDialogueMasterGenerated,
   onOpenInEditor,
+  isLoggedIn = false,
+  onLoginRequired,
 }) => {
   const [segments, setSegments] = useState<ScriptSegment[]>(() =>
     parseScriptToSegments(SAMPLE_DIALOGUE_SCRIPT, voices)
@@ -80,6 +84,10 @@ export const MultiSpeakerDialogueTab: React.FC<MultiSpeakerDialogueTabProps> = (
 
   // Play a single segment preview
   const handlePlaySegment = async (segment: ScriptSegment) => {
+    if (!isLoggedIn) {
+      onLoginRequired?.('multi');
+      return;
+    }
     if (playingSegmentId === segment.id) {
       audioEngine.stop();
       setPlayingSegmentId(null);
@@ -149,6 +157,10 @@ export const MultiSpeakerDialogueTab: React.FC<MultiSpeakerDialogueTabProps> = (
 
   // Generate complete stitched multi-speaker audio master
   const handleGenerateFullDialogue = async () => {
+    if (!isLoggedIn) {
+      onLoginRequired?.('multi');
+      return;
+    }
     setIsGeneratingAll(true);
     setGenerationProgress('Synthesizing dialogue lines...');
 

@@ -5,9 +5,12 @@ interface AccountModalProps {
   onClose: () => void;
   onSignIn: (email: string, password: string) => Promise<void>;
   onSignUp: (email: string, password: string) => Promise<string | null>;
+  message?: string;
+  providers?: string[];
+  onOAuth?: (provider: string) => void;
 }
 
-export const AccountModal: React.FC<AccountModalProps> = ({ onClose, onSignIn, onSignUp }) => {
+export const AccountModal: React.FC<AccountModalProps> = ({ onClose, onSignIn, onSignUp, message, providers = [], onOAuth }) => {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -50,9 +53,25 @@ export const AccountModal: React.FC<AccountModalProps> = ({ onClose, onSignIn, o
             <X className="w-5 h-5" />
           </button>
         </div>
+        {message && <p className="text-xs text-amber-300 mb-2">{message}</p>}
         <p className="text-xs text-zinc-400 mb-4">
           Optional. Log in to save your voices, settings and script history to your account.
         </p>
+
+        {onOAuth && providers.some((p) => p === 'google' || p === 'github') && (
+          <div className="mb-4 space-y-2">
+            {providers.filter((p) => p === 'google' || p === 'github').map((p) => (
+              <button
+                key={p}
+                onClick={() => onOAuth(p)}
+                className="w-full rounded-lg border border-zinc-700 bg-zinc-950 py-2 text-sm font-medium text-white hover:border-zinc-500 cursor-pointer"
+              >
+                Continue with {p === 'google' ? 'Google' : 'GitHub'}
+              </button>
+            ))}
+            <p className="text-center text-[11px] text-zinc-500">or use your email</p>
+          </div>
+        )}
 
         <div className="space-y-3">
           <input

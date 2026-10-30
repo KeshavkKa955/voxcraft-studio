@@ -35,7 +35,7 @@ const writeLocal = (key: string, value: unknown) => {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'single' | 'dialogue' | 'editor' | 'clone' | 'library'>('single');
-  const [showLanding, setShowLanding] = useState<boolean>(true);
+  const [showLanding, setShowLanding] = useState<boolean>(() => !/(token|error)/i.test(window.location.hash));
   const [voices, setVoices] = useState<VoiceProfile[]>(DEFAULT_VOICES);
   const [activeAudioBuffer, setActiveAudioBuffer] = useState<AudioBuffer | null>(null);
   const [activeTrackTitle, setActiveTrackTitle] = useState<string>('Voiceover Master');
@@ -44,6 +44,8 @@ export default function App() {
   const [hasApiKey, setHasApiKey] = useState<boolean>(false);
   const [user, setUser] = useState<AccountUser | null>(null);
   const [showAccount, setShowAccount] = useState<boolean>(false);
+  const [loginNote, setLoginNote] = useState<string>('');
+  const [providers, setProviders] = useState<string[]>([]);
   const [cloudReady, setCloudReady] = useState<boolean>(false);
   const [history, setHistory] = useState<HistoryItem[]>(() => readLocal<HistoryItem[]>(HISTORY_KEY, []));
   const [settings, setSettings] = useState<VoiceSettings>(() => readLocal<VoiceSettings>(SETTINGS_KEY, {}));
@@ -112,6 +114,7 @@ export default function App() {
   };
 
   useEffect(() => {
+    accountService.getProviders().then(setProviders);
     accountService.init().then((u) => {
       if (u) {
         setUser(u);
@@ -150,6 +153,15 @@ export default function App() {
     setCloudReady(false);
     await loadCloud();
     return null;
+  };
+
+  const requestLogin = (reason: 'free' | 'multi' = 'free') => {
+    setLoginNote(
+      reason === 'multi'
+        ? 'Multi-Voice needs a free account. Log in or sign up to continue.'
+        : 'You’ve used your 1 free voice. Log in or sign up (it’s free) to keep creating.'
+    );
+    setShowAccount(true);
   };
 
   const handleSignOut = async () => {
@@ -250,7 +262,13 @@ export default function App() {
 
       {showAccount && (
         <AccountModal
-          onClose={() => setShowAccount(false)}
+          message={loginNote}
+          providers={providers}
+          onOAuth={(p) => accountService.oauth(p)}
+          onClose={() => {
+            setShowAccount(false);
+            setLoginNote('');
+          }}
           onSignIn={handleSignIn}
           onSignUp={handleSignUp}
         />
@@ -264,6 +282,8 @@ export default function App() {
             settings={settings}
             onSettingsChange={setSettings}
             history={history}
+            isLoggedIn={!!user}
+            onLoginRequired={requestLogin}
             voices={voices}
             onVoiceoverGenerated={handleVoiceoverGenerated}
             onOpenInEditor={() => setActiveTab('editor')}
@@ -273,6 +293,8 @@ export default function App() {
         {activeTab === 'dialogue' && (
           <MultiSpeakerDialogueTab
             voices={voices}
+            isLoggedIn={!!user}
+            onLoginRequired={requestLogin}
             onDialogueMasterGenerated={handleDialogueMasterGenerated}
             onOpenInEditor={() => setActiveTab('editor')}
           />

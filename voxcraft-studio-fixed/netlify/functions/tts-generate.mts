@@ -1,7 +1,12 @@
 import { getAi, json, noKey, readBody, pcmBase64ToWavBase64 } from '../lib/gemini.mts';
+import { guestGate } from '../lib/guard.mts';
 
-export default async (req: Request) => {
+export default async (req: Request, context: any) => {
   if (req.method !== 'POST') return json({ error: 'Method not allowed.' }, 405);
+
+  // Guests get one free voice, then must log in
+  const gate = await guestGate(req, context);
+  if (gate.block) return gate.block;
 
   try {
     const {
@@ -70,6 +75,7 @@ export default async (req: Request) => {
       if (!clonedAudio) {
         return json({ error: 'Gemini returned no audio for the cloned voice.', fallbackNeeded: true }, 502);
       }
+      await gate.markUsed();
       return json({
         audioBase64: pcmBase64ToWavBase64(clonedAudio),
         mimeType: 'audio/wav',
@@ -115,6 +121,7 @@ export default async (req: Request) => {
       return json({ error: 'Failed to generate speech audio from Gemini model.' }, 500);
     }
 
+    await gate.markUsed();
     return json({
       audioBase64: pcmBase64ToWavBase64(base64Audio),
       mimeType: 'audio/wav',

@@ -1,7 +1,9 @@
+import { currentUser } from '../lib/guard.mts';
 import { getAi, json, noKey, readBody, pcmBase64ToWavBase64 } from '../lib/gemini.mts';
 
 export default async (req: Request) => {
   if (req.method !== 'POST') return json({ error: 'Method not allowed.' }, 405);
+  if (!(await currentUser())) return json({ error: 'Please log in to use multi-speaker audio.', loginRequired: true }, 401);
 
   try {
     const { dialogues, speakerA, speakerB } = await readBody(req);

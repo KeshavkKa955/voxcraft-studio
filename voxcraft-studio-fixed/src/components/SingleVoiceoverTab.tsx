@@ -24,6 +24,7 @@ import {
 import { VoiceProfile } from '../types/index.ts';
 import { audioEngine } from '../services/audioEngine.ts';
 import { formatDuration } from '../utils/audioEncoding.ts';
+import { guestUsage } from '../services/accountService.ts';
 import type { HistoryItem, VoiceSettings } from '../services/accountService.ts';
 import { colabService } from '../services/colabService.ts';
 
@@ -34,6 +35,8 @@ interface SingleVoiceoverTabProps {
   settings?: VoiceSettings;
   onSettingsChange?: (settings: VoiceSettings) => void;
   history?: HistoryItem[];
+  isLoggedIn?: boolean;
+  onLoginRequired?: (reason?: 'free' | 'multi') => void;
 }
 
 export const SingleVoiceoverTab: React.FC<SingleVoiceoverTabProps> = ({
@@ -43,6 +46,8 @@ export const SingleVoiceoverTab: React.FC<SingleVoiceoverTabProps> = ({
   settings,
   onSettingsChange,
   history = [],
+  isLoggedIn = false,
+  onLoginRequired,
 }) => {
   const [text, setText] = useState<string>(SAMPLE_STUDIO_SCRIPTS[0].text);
   const [selectedLanguage, setSelectedLanguage] = useState<string>(settings?.language || 'en-US');
@@ -93,6 +98,12 @@ export const SingleVoiceoverTab: React.FC<SingleVoiceoverTabProps> = ({
       return;
     }
 
+    // Guests get one free voice (your own Colab clone is always free)
+    if (!isLoggedIn && !currentVoice?.colabRefAudio && guestUsage.used()) {
+      onLoginRequired?.('free');
+      return;
+    }
+
     setIsGenerating(true);
     setErrorMsg(null);
 
@@ -127,12 +138,24 @@ export const SingleVoiceoverTab: React.FC<SingleVoiceoverTabProps> = ({
           }),
         });
 
+        if (response.status === 401) {
+          const e: any = new Error('Please log in to continue.');
+          e.loginRequired = true;
+          throw e;
+        }
+        if (response.status === 429) {
+          const d = await response.json().catch(() => ({}));
+          const e: any = new Error(d.error || 'Daily limit reached. Please try again tomorrow.');
+          e.noFallback = true;
+          throw e;
+        }
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(errorData.error || `Server responded with status ${response.status}`);
         }
 
         data = await response.json();
+        if (data.audioBase64 && !isLoggedIn) guestUsage.markUsed();
         if (!data.audioBase64) {
           throw new Error('No audio data received in response.');
         }
@@ -157,6 +180,14 @@ export const SingleVoiceoverTab: React.FC<SingleVoiceoverTabProps> = ({
 
       onVoiceoverGenerated(audioBuffer, text, currentVoice?.name || 'Voice');
     } catch (err: any) {
+      if (err?.loginRequired) {
+        onLoginRequired?.('free');
+        return;
+      }
+      if (err?.noFallback) {
+        setErrorMsg(err.message);
+        return;
+      }
       if (currentVoice?.colabRefAudio || currentVoice?.geminiVoiceId) {
         // Never play the robotic fallback for a cloned voice: show the real problem instead
         console.warn('Cloned voice error:', err);
