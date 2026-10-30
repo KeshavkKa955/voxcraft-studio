@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mic2, Sliders, Waves, Sparkles, Download, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Mic2, Sliders, Waves, Sparkles, Download, CheckCircle2, AlertCircle, User, LogOut } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: 'single' | 'dialogue' | 'editor' | 'clone' | 'library';
@@ -8,6 +8,9 @@ interface HeaderProps {
   onOpenExport: () => void;
   hasApiKey: boolean;
   clonedVoicesCount: number;
+  accountEmail: string | null;
+  onOpenAccount: () => void;
+  onSignOut: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -17,6 +20,9 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenExport,
   hasApiKey,
   clonedVoicesCount,
+  accountEmail,
+  onOpenAccount,
+  onSignOut,
 }) => {
   return (
     <header className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-30">
@@ -114,6 +120,24 @@ export const Header: React.FC<HeaderProps> = ({
                 </>
               )}
             </div>
+
+            {accountEmail ? (
+              <div className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800">
+                <User className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-zinc-300 max-w-[110px] truncate hidden sm:inline">{accountEmail}</span>
+                <button onClick={onSignOut} aria-label="Log out" title="Log out" className="text-zinc-400 hover:text-white cursor-pointer">
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={onOpenAccount}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 hover:border-zinc-600 cursor-pointer"
+              >
+                <User className="w-3.5 h-3.5 text-amber-400" />
+                <span>Log in</span>
+              </button>
+            )}
 
             {hasAudioInEditor && (
               <button

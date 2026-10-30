@@ -31,6 +31,8 @@ export interface VoiceProfile {
   isClone: boolean;
   cloneSamples?: VoiceCloneSample[];
   customStylePrompt?: string;
+  colabRefAudio?: string; // base64 WAV reference for free Colab cloning (stored in this browser only)
+  geminiVoiceId?: string; // real cloned voice id (voice_...) from Gemini voice replication
   description: string;
 }
 

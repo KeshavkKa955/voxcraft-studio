@@ -25,6 +25,7 @@ import { VoiceProfile } from '../types/index.ts';
 import { audioEngine } from '../services/audioEngine.ts';
 import { formatDuration } from '../utils/audioEncoding.ts';
 import type { HistoryItem, VoiceSettings } from '../services/accountService.ts';
+import { colabService } from '../services/colabService.ts';
 
 interface SingleVoiceoverTabProps {
   voices: VoiceProfile[];
@@ -96,31 +97,47 @@ export const SingleVoiceoverTab: React.FC<SingleVoiceoverTabProps> = ({
     setErrorMsg(null);
 
     try {
-      // 1. Call server Gemini TTS endpoint
-      const response = await fetch('/api/tts/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      let data: { audioBase64?: string };
+
+      if (currentVoice?.colabRefAudio) {
+        // Free cloning: your own Colab server
+        data = await colabService.speak({
           text: text.trim(),
           language: selectedLanguage,
-          accent: selectedAccent,
+          referenceBase64: currentVoice.colabRefAudio,
           emotion: selectedEmotion,
-          voiceName: currentVoice?.baseVoice || 'Kore',
-          voiceId: currentVoice?.geminiVoiceId || undefined,
-          customStylePrompt: currentVoice?.isClone && !currentVoice.geminiVoiceId
-            ? currentVoice.customStylePrompt
-            : customDirectives,
-          speed,
-          pitchShift,
-        }),
-      });
+        });
+      } else {
+        // 1. Call server Gemini TTS endpoint
+        const response = await fetch('/api/tts/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: text.trim(),
+            language: selectedLanguage,
+            accent: selectedAccent,
+            emotion: selectedEmotion,
+            voiceName: currentVoice?.baseVoice || 'Kore',
+            voiceId: currentVoice?.geminiVoiceId || undefined,
+            customStylePrompt: currentVoice?.isClone && !currentVoice.geminiVoiceId
+              ? currentVoice.customStylePrompt
+              : customDirectives,
+            speed,
+            pitchShift,
+          }),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Server responded with status ${response.status}`);
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Server responded with status ${response.status}`);
+        }
+
+        data = await response.json();
+        if (!data.audioBase64) {
+          throw new Error('No audio data received in response.');
+        }
+
       }
-
-      const data = await response.json();
       if (!data.audioBase64) {
         throw new Error('No audio data received in response.');
       }
@@ -140,6 +157,12 @@ export const SingleVoiceoverTab: React.FC<SingleVoiceoverTabProps> = ({
 
       onVoiceoverGenerated(audioBuffer, text, currentVoice?.name || 'Voice');
     } catch (err: any) {
+      if (currentVoice?.colabRefAudio || currentVoice?.geminiVoiceId) {
+        // Never play the robotic fallback for a cloned voice: show the real problem instead
+        console.warn('Cloned voice error:', err);
+        setErrorMsg(`Could not generate in your cloned voice: ${err.message || 'unknown error'}`);
+        return;
+      }
       console.warn('Gemini server TTS error, activating studio synthetic generator fallback:', err);
       // Fallback: Generate studio synthetic voiceover so workflow never breaks
       const fallbackBuffer = audioEngine.generateDemoVoiceoverBuffer(
