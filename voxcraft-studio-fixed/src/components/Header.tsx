@@ -1,9 +1,9 @@
 import React from 'react';
-import { Mic2, Sliders, Waves, Sparkles, Download, CheckCircle2, AlertCircle, User, LogOut } from 'lucide-react';
+import { Mic2, Sliders, Waves, Sparkles, Download, CheckCircle2, AlertCircle, User, LogOut, Music } from 'lucide-react';
 
 interface HeaderProps {
-  activeTab: 'single' | 'dialogue' | 'editor' | 'clone' | 'library';
-  setActiveTab: (tab: 'single' | 'dialogue' | 'editor' | 'clone' | 'library') => void;
+  activeTab: 'single' | 'dialogue' | 'editor' | 'clone' | 'library' | 'vocal';
+  setActiveTab: (tab: 'single' | 'dialogue' | 'editor' | 'clone' | 'library' | 'vocal') => void;
   hasAudioInEditor: boolean;
   onOpenExport: () => void;
   hasApiKey: boolean;
@@ -102,6 +102,17 @@ export const Header: React.FC<HeaderProps> = ({
                   {clonedVoicesCount}
                 </span>
               )}
+            </button>
+            <button
+              onClick={() => setActiveTab('vocal')}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap shrink-0 ${
+                activeTab === 'vocal'
+                  ? 'bg-zinc-800 text-white shadow-sm'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
+              }`}
+            >
+              <Music className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-400" />
+              <span>Vocal Remover</span>
             </button>
           </nav>
 

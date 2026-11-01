@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-export type StudioTab = 'single' | 'dialogue' | 'editor' | 'clone';
+export type StudioTab = 'single' | 'dialogue' | 'editor' | 'clone' | 'vocal';
 
 interface LandingPageProps {
   onEnter: (tab?: StudioTab) => void;
@@ -167,6 +167,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
     { tab: 'dialogue', n: '02', title: 'Multi-Voice', text: 'Write a dialogue between two speakers and get one finished audio file.' },
     { tab: 'editor', n: '03', title: 'Audio Editor', text: 'Trim, fade, change speed and pitch, and check the waveform before exporting.' },
     { tab: 'clone', n: '04', title: 'Voice Clone', text: 'Record a short sample of your own voice and use it to speak new words.' },
+    { tab: 'vocal', n: '05', title: 'Vocal Remover', text: 'Split any song into vocals and instrumental, or into drums, bass and more.' },
   ];
 
   return (

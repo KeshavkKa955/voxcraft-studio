@@ -13,6 +13,7 @@ import { audioEngine } from './services/audioEngine.ts';
 import { accountService, AccountUser, HistoryItem, VoiceSettings } from './services/accountService.ts';
 import { AccountModal } from './components/AccountModal.tsx';
 import { LandingPage } from './components/LandingPage.tsx';
+import { VocalRemoverTab } from './components/VocalRemoverTab.tsx';
 
 const HISTORY_KEY = 'voxcraft_history';
 const SETTINGS_KEY = 'voxcraft_settings';
@@ -34,7 +35,7 @@ const writeLocal = (key: string, value: unknown) => {
 };
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'single' | 'dialogue' | 'editor' | 'clone' | 'library'>('single');
+  const [activeTab, setActiveTab] = useState<'single' | 'dialogue' | 'editor' | 'clone' | 'library' | 'vocal'>('single');
   const [showLanding, setShowLanding] = useState<boolean>(() => !/(token|error)/i.test(window.location.hash));
   const [voices, setVoices] = useState<VoiceProfile[]>(DEFAULT_VOICES);
   const [activeAudioBuffer, setActiveAudioBuffer] = useState<AudioBuffer | null>(null);
@@ -318,6 +319,8 @@ export default function App() {
             }}
           />
         )}
+
+        {activeTab === 'vocal' && <VocalRemoverTab />}
 
         {activeTab === 'library' && (
           <LibraryTab
