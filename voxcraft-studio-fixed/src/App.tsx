@@ -156,10 +156,12 @@ export default function App() {
     return null;
   };
 
-  const requestLogin = (reason: 'free' | 'multi' = 'free') => {
+  const requestLogin = (reason: 'free' | 'multi' | 'vocal' = 'free') => {
     setLoginNote(
       reason === 'multi'
         ? 'Multi-Voice needs a free account. Log in or sign up to continue.'
+        : reason === 'vocal'
+        ? 'The Vocal Remover is free with an account. Log in or sign up to continue.'
         : 'You’ve used your 1 free voice. Log in or sign up (it’s free) to keep creating.'
     );
     setShowAccount(true);
@@ -320,7 +322,7 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'vocal' && <VocalRemoverTab />}
+        {activeTab === 'vocal' && <VocalRemoverTab isLoggedIn={!!user} onLoginRequired={requestLogin} />}
 
         {activeTab === 'library' && (
           <LibraryTab
